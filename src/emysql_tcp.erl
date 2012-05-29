@@ -178,28 +178,22 @@ recv_packet_header(Sock) ->
 %	end.
 
 recv_packet_body(Sock, PacketLength) ->
-	Tid = ets:new(emysql_buffer, [ordered_set, private]),
-	Bin = recv_packet_body(Sock, PacketLength, Tid, 0),
-	ets:delete(Tid),
-	Bin.
+	recv_packet_body(Sock, PacketLength, <<>>).
 
-recv_packet_body(Sock, PacketLength, Tid, Key) ->
+recv_packet_body(Sock, PacketLength, Acc)->
 	if
 		PacketLength > ?PACKETSIZE ->
 			case gen_tcp:recv(Sock, ?PACKETSIZE, ?TIMEOUT) of
 				{ok, Bin} ->
-					ets:insert(Tid, {Key, Bin}),
-					recv_packet_body(Sock, PacketLength - ?PACKETSIZE, Tid, Key+1);
+					Acc0 = <<Acc/binary, Bin/binary>>,
+					recv_packet_body(Sock, PacketLength - ?PACKETSIZE, Acc0);
 				{error, Reason1} ->
 					exit({failed_to_recv_packet_body, Reason1})
 			end;
 		true ->
 			case gen_tcp:recv(Sock, PacketLength, ?TIMEOUT) of
 				{ok, Bin} ->
-					if
-						Key == 0 -> Bin;
-						true -> iolist_to_binary(?ETS_SELECT(Tid) ++ Bin)
-					end;
+					<<Acc/binary, Bin/binary>>;
 				{error, Reason1} ->
 					exit({failed_to_recv_packet_body, Reason1})
 			end
