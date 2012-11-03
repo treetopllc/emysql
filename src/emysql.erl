@@ -465,6 +465,10 @@ execute(PoolId, StmtName, Timeout) when is_atom(StmtName), is_integer(Timeout) -
 %% @end doc: hd feb 11
 %%
 
+execute({xact, Connection}, Query, Args, Timeout) when (is_list(Query) orelse is_binary(Query)) andalso is_list(Args) andalso is_integer(Timeout) ->
+	monitor_work(Connection, Timeout, {emysql_conn, execute, [Connection, Query, Args]});
+execute({xact, Connection}, StmtName, Args, Timeout) when is_atom(StmtName), is_list(Args) andalso is_integer(Timeout) ->
+	monitor_work(Connection, Timeout, {emysql_conn, execute, [Connection, StmtName, Args]});
 execute(PoolId, Query, Args, Timeout) when (is_list(Query) orelse is_binary(Query)) andalso is_list(Args) andalso is_integer(Timeout) ->
     %-% io:format("~p execute getting connection for pool id ~p~n",[self(), PoolId]),
 	Connection = emysql_conn_mgr:wait_for_connection(PoolId),

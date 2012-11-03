@@ -111,7 +111,7 @@ unprepare(Connection, Name) ->
 transaction(Connection, Fun) ->
     case begin_transaction(Connection) of
         #ok_packet{} ->
-            try Fun(Connection) of
+            try Fun({xact, Connection}) of
                 Val ->
                     case commit_transaction(Connection) of
                         #ok_packet{} ->
